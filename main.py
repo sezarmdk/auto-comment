@@ -27,11 +27,14 @@ from telethon.sessions import StringSession
 from telethon.tl import types
 from telethon.tl.functions import PingRequest
 from telethon.tl.functions.channels import (
-    GetDiscussionMessageRequest,
     GetFullChannelRequest,
     JoinChannelRequest,
 )
-from telethon.tl.functions.messages import EditMessageRequest, SendMessageRequest
+from telethon.tl.functions.messages import (
+    EditMessageRequest,
+    GetDiscussionMessageRequest,
+    SendMessageRequest,
+)
 from telethon.tl.functions.updates import GetChannelDifferenceRequest
 
 try:
