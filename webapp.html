@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Komment Pilot</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#070a14; --txt:#f4f6ff; --sub:rgba(235,240,255,.62);
+  --glass:rgba(255,255,255,.075); --glass2:rgba(255,255,255,.13);
+  --stroke:rgba(255,255,255,.16); --hi:rgba(255,255,255,.28);
+  --accent:#5b8cff; --green:#34d399; --red:#ff5d73; --amber:#fbbf24;
+  --shadow:0 12px 40px rgba(0,0,0,.35);
+}
+body.light{
+  --bg:#eef2fb; --txt:#0b1124; --sub:rgba(20,30,60,.58);
+  --glass:rgba(255,255,255,.55); --glass2:rgba(255,255,255,.75);
+  --stroke:rgba(255,255,255,.85); --hi:rgba(255,255,255,.95);
+  --shadow:0 12px 36px rgba(40,60,120,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;
+  color:var(--txt);background:var(--bg);overflow-x:hidden;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 110px);
+}
+/* suzib yuruvchi rangli dog'lar — shisha orqasida */
+.blobs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.blobs i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;animation:float 18s ease-in-out infinite alternate}
+.blobs i:nth-child(1){width:340px;height:340px;background:#4f6bff;top:-80px;left:-90px}
+.blobs i:nth-child(2){width:300px;height:300px;background:#b04bff;top:30%;right:-120px;animation-delay:-6s}
+.blobs i:nth-child(3){width:280px;height:280px;background:#00c2a8;bottom:-90px;left:10%;animation-delay:-12s}
+body.light .blobs i{opacity:.35}
+@keyframes float{to{transform:translate(40px,60px) scale(1.15)}}
+
+.glass{
+  background:linear-gradient(160deg,var(--glass2),var(--glass));
+  backdrop-filter:blur(26px) saturate(180%);-webkit-backdrop-filter:blur(26px) saturate(180%);
+  border:1px solid var(--stroke);border-radius:26px;
+  box-shadow:inset 0 1px 0 var(--hi),var(--shadow);
+}
+header{display:flex;align-items:center;justify-content:space-between;margin:4px 4px 16px}
+header h1{font-size:26px;font-weight:750;letter-spacing:-.5px}
+header p{color:var(--sub);font-size:13px;margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600;color:var(--txt);cursor:pointer;border:1px solid var(--stroke)}
+.chip:active{transform:scale(.96)}
+
+.hero{padding:18px;display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.dot{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;font-size:22px;flex:none}
+.on .dot{background:rgba(52,211,153,.18);box-shadow:0 0 24px rgba(52,211,153,.35)}
+.off .dot{background:rgba(255,93,115,.16)}
+.hero .t{flex:1}
+.hero b{font-size:17px}
+.hero small{display:block;color:var(--sub);font-size:13px;margin-top:2px}
+
+.sw{position:relative;width:54px;height:33px;flex:none}
+.sw input{display:none}
+.sw span{position:absolute;inset:0;border-radius:99px;background:rgba(120,130,160,.35);transition:.25s}
+.sw span:after{content:"";position:absolute;top:3px;left:3px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.3);transition:.25s cubic-bezier(.3,1.4,.5,1)}
+.sw input:checked+span{background:var(--green)}
+.sw input:checked+span:after{transform:translateX(21px)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+.stat{padding:12px 10px;text-align:center;border-radius:20px}
+.stat b{display:block;font-size:18px;font-weight:700}
+.stat span{font-size:11.5px;color:var(--sub)}
+
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--sub);margin:0 6px 10px;font-weight:650}
+
+.card{padding:15px;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:11px}
+.av{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;font-weight:700;font-size:17px;color:#fff;flex:none;background:linear-gradient(135deg,#5b8cff,#a855f7)}
+.name{flex:1;min-width:0}
+.name b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:11.5px;font-weight:600}
+.badge.ok{color:var(--green)} .badge.no{color:var(--amber)}
+.ib{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;border:1px solid var(--stroke);background:var(--glass);cursor:pointer;font-size:15px;color:var(--txt)}
+.ib:active{transform:scale(.92)}
+.bubble{margin-top:12px;padding:11px 13px;border-radius:16px;background:rgba(91,140,255,.14);border:1px solid rgba(91,140,255,.25);word-break:break-word;white-space:pre-wrap;cursor:pointer}
+.mini{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.mini span{font-size:12px;padding:5px 9px;border-radius:10px;background:var(--glass);border:1px solid var(--stroke);color:var(--sub)}
+.mini .g{color:var(--green)} .mini .r{color:var(--red)}
+.exp{margin-top:12px;font-size:13.5px;color:var(--accent);font-weight:600;cursor:pointer;user-select:none}
+.edits{margin-top:10px;display:none}
+.edits.open{display:block}
+.ed{display:flex;align-items:center;gap:8px;padding:9px 11px;border-radius:14px;background:var(--glass);border:1px solid var(--stroke);margin-bottom:7px;font-size:14px}
+.ed em{font-style:normal;color:var(--sub);font-size:12px;width:18px}
+.ed p{flex:1;word-break:break-word}
+.ed button{border:none;background:none;color:var(--red);font-size:17px;cursor:pointer;padding:0 4px}
+.add{display:flex;gap:8px}
+input,textarea{
+  width:100%;font:inherit;color:var(--txt);padding:12px 14px;border-radius:15px;outline:none;
+  background:var(--glass);border:1px solid var(--stroke);
+}
+input::placeholder,textarea::placeholder{color:var(--sub)}
+input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:none;min-height:90px}
+.btn{border:none;cursor:pointer;font:inherit;font-weight:650;color:#fff;padding:12px 18px;border-radius:15px;
+  background:linear-gradient(135deg,#5b8cff,#7c5cff);box-shadow:0 8px 24px rgba(91,140,255,.35),inset 0 1px 0 rgba(255,255,255,.35);white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5}
+
+.set{padding:4px 16px;margin-bottom:22px}
+.srow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--stroke)}
+.srow:last-child{border-bottom:none}
+.srow.tap{cursor:pointer}
+.sl{flex:1;min-width:0}
+.sl b{display:block;font-size:14.5px;font-weight:650}
+.sl small{display:block;color:var(--sub);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step{display:flex;align-items:center;gap:4px;padding:3px;border-radius:13px;background:var(--glass);border:1px solid var(--stroke)}
+.step button{width:30px;height:30px;border:none;border-radius:10px;background:var(--glass2);color:var(--txt);font-size:17px;cursor:pointer}
+.step span{min-width:50px;text-align:center;font-weight:700;font-size:14px}
+.seg{display:flex;padding:3px;border-radius:13px;background:var(--glass);border:1px solid var(--stroke)}
+.seg button{border:none;background:none;color:var(--sub);font:inherit;font-size:13px;font-weight:650;padding:7px 11px;border-radius:10px;cursor:pointer;transition:.2s}
+.seg button.on{background:linear-gradient(135deg,#5b8cff,#7c5cff);color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.4)}
+.arrow{font-size:24px;color:var(--sub)}
+.pm{font-size:11px;padding:2px 7px;border-radius:8px;background:rgba(251,191,36,.18);color:var(--amber);font-weight:700;margin-left:6px;vertical-align:middle}
+.nx{font-size:11px;padding:2px 7px;border-radius:8px;background:rgba(52,211,153,.18);color:var(--green);font-weight:700}
+.note{font-size:12px;color:var(--sub);margin:4px 2px 0}
+.empty{padding:34px 20px;text-align:center;color:var(--sub)}
+.empty div{font-size:40px;margin-bottom:8px}
+
+.fab{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 18px);z-index:5;
+  padding:16px;text-align:center;font-weight:700;font-size:16px;cursor:pointer;border-radius:22px}
+.fab:active{transform:scale(.98)}
+
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.25s;z-index:9}
+.ov.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:10;padding:20px;
+  transform:translateY(120%);transition:.35s cubic-bezier(.2,.9,.3,1);visibility:hidden}
+.sheet.show{transform:none;visibility:visible}
+.sheet h3{font-size:19px;margin-bottom:4px}
+.sheet p{color:var(--sub);font-size:13px;margin-bottom:14px}
+.sheet .f{display:grid;gap:10px}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--stroke);margin:-8px auto 14px}
+
+.toast{position:fixed;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translate(-50%,-150%);z-index:20;
+  padding:11px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:.3s;max-width:90%;opacity:0;visibility:hidden}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+.lock{padding:30px 20px;text-align:center;margin-top:30vh}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:r .7s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="blobs"><i></i><i></i><i></i></div>
+
+<div id="app" style="display:none">
+  <header>
+    <div><h1>Komment Pilot</h1><p>Userbot boshqaruv paneli</p></div>
+    <div class="chip glass" id="pingBtn">🏓 <span id="pingVal">Ping</span></div>
+  </header>
+
+  <div class="hero glass" id="hero">
+    <div class="dot" id="heroDot">⚡</div>
+    <div class="t"><b id="heroTitle">Avto-komment</b><small id="heroSub">—</small></div>
+    <label class="sw"><input type="checkbox" id="activeSw"><span></span></label>
+  </div>
+
+  <div class="stats">
+    <div class="stat glass"><b id="sCh">0</b><span>Kanal</span></div>
+    <div class="stat glass"><b id="sSp">—</b><span>Oxirgi tezlik</span></div>
+    <div class="stat glass"><b id="sDc">—</b><span>DC / Poll</span></div>
+  </div>
+
+  <h2>Sozlamalar</h2>
+  <div class="glass set">
+    <div class="srow">
+      <div class="sl"><b>⏱ Tahrirdan oldin kutish</b><small>Izoh yozilgach necha soniyada tahrirlansin</small></div>
+      <div class="step"><button data-st="-">−</button><span id="delayVal">1.0 s</span><button data-st="+">＋</button></div>
+    </div>
+    <div class="srow">
+      <div class="sl"><b>🔀 Tahrir matnini tanlash</b><small id="modeHint">Har postda keyingi matn</small></div>
+      <div class="seg" id="seg"><button data-m="navbat">Navbat</button><button data-m="random">Random</button></div>
+    </div>
+    <div class="srow tap" id="repRow">
+      <div class="sl"><b>📊 Hisobot kanali</b><small id="repVal">Belgilanmagan</small></div>
+      <div class="arrow">›</div>
+    </div>
+  </div>
+
+  <h2>Kanallar</h2>
+  <div id="list"></div>
+</div>
+
+<div class="lock glass" id="lock" style="display:none">
+  <div style="font-size:40px">🔒</div><b>Panelni Telegram bot orqali oching</b>
+  <p style="color:var(--sub);margin-top:6px;font-size:13px" id="lockMsg"></p>
+</div>
+
+<div class="fab glass" id="fab" style="display:none">＋ Kanal qo'shish</div>
+
+<div class="ov" id="ov"></div>
+<div class="sheet glass" id="sheet">
+  <div class="grab"></div>
+  <h3 id="shTitle">Kanal qo'shish</h3>
+  <p id="shSub">Kanal username va komment matnini kiriting</p>
+  <div class="f">
+    <input id="fUser" placeholder="@kanal_username" autocapitalize="off" autocorrect="off">
+    <textarea id="fText" placeholder="Komment matni..."></textarea>
+    <div class="note" id="fNote">✨ Premium emoji qo'shish uchun matnli buyruqdan foydalaning: <b>.cadd</b> / <b>.ce</b></div>
+    <button class="btn" id="fSave">Saqlash</button>
+  </div>
+</div>
+
+<div class="toast glass" id="toast"></div>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const haptic = t => { try { tg.HapticFeedback.impactOccurred(t || "light"); } catch(e){} };
+const okHaptic = t => { try { tg.HapticFeedback.notificationOccurred(t || "success"); } catch(e){} };
+let state = null, openEdits = new Set(), busy = false;
+
+if (tg) {
+  tg.ready(); tg.expand();
+  if (tg.colorScheme === "light") document.body.classList.add("light");
+  tg.onEvent("themeChanged", () => document.body.classList.toggle("light", tg.colorScheme === "light"));
+  try { tg.setHeaderColor(tg.colorScheme === "light" ? "#eef2fb" : "#070a14"); } catch(e){}
+}
+
+function toast(msg, bad){
+  const t = $("toast");
+  t.textContent = msg;
+  t.style.color = bad ? "var(--red)" : "var(--txt)";
+  t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+async function api(path, body){
+  const r = await fetch("/api/" + path, {
+    method: body ? "POST" : "GET",
+    headers: {"Content-Type":"application/json","X-Init-Data": tg ? tg.initData : ""},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const d = await r.json().catch(() => ({error:"Server javob bermadi"}));
+  if (r.status === 403) { showLock(d.error); throw new Error(d.error); }
+  if (!r.ok || d.error) throw new Error(d.error || "Xato");
+  return d;
+}
+
+function showLock(msg){
+  $("app").style.display = "none"; $("fab").style.display = "none";
+  $("lock").style.display = "block"; $("lockMsg").textContent = msg || "";
+}
+
+function fmtAgo(ts){
+  if (!ts) return "";
+  const s = Math.max(0, Math.floor(Date.now()/1000 - ts));
+  if (s < 60) return s + " s oldin";
+  if (s < 3600) return Math.floor(s/60) + " daq oldin";
+  if (s < 86400) return Math.floor(s/3600) + " soat oldin";
+  return Math.floor(s/86400) + " kun oldin";
+}
+
+function render(d){
+  state = d;
+  $("app").style.display = "block"; $("fab").style.display = "block"; $("lock").style.display = "none";
+  const on = d.active;
+  $("activeSw").checked = on;
+  $("hero").className = "hero glass " + (on ? "on" : "off");
+  $("heroDot").textContent = on ? "⚡" : "⏸";
+  $("heroSub").textContent = on ? "Yoqilgan — postlarga darhol yozadi" : "O'chirilgan — kanallar saqlanadi, izoh yozilmaydi";
+  $("sCh").textContent = d.channels.length;
+  $("sDc").textContent = "DC" + d.dc + " · " + (d.poll ? d.poll + "s" : "off");
+
+  /* sozlamalar */
+  $("delayVal").textContent = (+d.delay).toFixed(1) + " s";
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b.dataset.m === d.mode));
+  $("modeHint").textContent = d.mode === "random" ? "Har safar tasodifiy matn" : "Har postda keyingi matn, oxiridan keyin 1-dan";
+  $("repVal").textContent = d.report ? (d.report.title + (d.report.username ? " · " + d.report.username : "")) : "Belgilanmagan — bosib tanlang";
+
+  let last = null;
+  d.channels.forEach(c => { if (c.stat && c.stat.speed && (!last || c.stat.at > last.at)) last = c.stat; });
+  $("sSp").textContent = last ? Math.round(last.speed * 1000) + " ms" : "—";
+
+  if (!d.channels.length){
+    $("list").innerHTML = `<div class="empty glass"><div>📭</div>Hali kanal yo'q.<br>Pastdagi tugma orqali qo'shing.</div>`;
+    return;
+  }
+  $("list").innerHTML = d.channels.map((c, n) => {
+    const st = c.stat, nm = c.title || c.username || c.id;
+    const letter = esc((nm.replace("@","")[0] || "?").toUpperCase());
+    let mini = "";
+    if (st){
+      const good = (st.status || "").includes("✅");
+      mini = `<div class="mini">
+        ${st.speed ? `<span>⚡ ${Math.round(st.speed*1000)} ms</span>` : ""}
+        ${st.lag != null ? `<span>⏱ ${st.lag} s farq</span>` : ""}
+        <span class="${good ? "g" : "r"}">${esc(st.status)}</span>
+        ${st.at ? `<span>${fmtAgo(st.at)}</span>` : ""}
+      </div>`;
+    }
+    const open = openEdits.has(c.id);
+    const eds = c.edits.map((e,i) => `<div class="ed"><em>${i+1}</em><p>${esc(e.text)}${e.premium ? '<span class="pm">✨ premium</span>' : ""}</p>
+        ${d.mode === "navbat" && c.next === i+1 ? '<span class="nx">keyingi</span>' : ""}
+        <button data-act="dele" data-id="${c.id}" data-i="${i}">✕</button></div>`).join("");
+    return `<div class="card glass">
+      <div class="row">
+        <div class="av">${letter}</div>
+        <div class="name"><b>${n+1}. ${esc(nm)}</b>
+          <span class="badge ${c.linked ? "ok" : "no"}">${esc(c.username || "yopiq kanal")} · ${c.linked ? "izohlar ochiq" : "izohlar yopiq"}</span></div>
+        <div class="ib" data-act="edit" data-id="${c.id}">✏️</div>
+        <div class="ib" data-act="del" data-id="${c.id}">🗑</div>
+      </div>
+      <div class="bubble" data-act="edit" data-id="${c.id}">${esc(c.text) || "<i style='opacity:.6'>matn yo'q</i>"}${c.premium ? '<span class="pm">✨ premium</span>' : ""}</div>
+      ${mini}
+      <div class="exp" data-act="exp" data-id="${c.id}">${open ? "▾" : "▸"} Tahrir matnlari (${c.edits.length})</div>
+      <div class="edits ${open ? "open" : ""}">
+        ${eds || `<div style="color:var(--sub);font-size:13px;margin-bottom:8px">Izoh yozilgach, ${(+d.delay).toFixed(1)} s dan keyin shu matnlardan biriga bir marta tahrirlanadi.</div>`}
+        <div class="add"><input placeholder="Yangi tahrir matni" id="ne_${c.id}"><button class="btn" data-act="adde" data-id="${c.id}">＋</button></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function load(){
+  try { render(await api("state")); } catch(e){ if ($("lock").style.display !== "block") toast(e.message, true); }
+}
+
+async function run(fn, okMsg){
+  if (busy) return; busy = true;
+  try { const d = await fn(); render(d); if (d.warn) toast("⚠️ " + d.warn, true); else if (okMsg){ toast(okMsg); okHaptic(); } return true; }
+  catch(e){ toast(e.message, true); okHaptic("error"); return false; }
+  finally { busy = false; }
+}
+
+/* yoqish/o'chirish */
+$("activeSw").addEventListener("change", e => { haptic("medium"); run(() => api("toggle", {active: e.target.checked}), e.target.checked ? "Yoqildi ✅" : "O'chirildi"); });
+
+/* ping */
+$("pingBtn").addEventListener("click", async () => {
+  haptic(); $("pingVal").innerHTML = '<span class="spin"></span>';
+  try { const d = await api("ping"); render(d); $("pingVal").textContent = d.ping.min + " ms"; }
+  catch(e){ $("pingVal").textContent = "Xato"; }
+});
+
+/* kutish vaqti */
+let delayTimer = null;
+document.querySelectorAll("[data-st]").forEach(b => b.addEventListener("click", () => {
+  haptic();
+  let v = +state.delay + (b.dataset.st === "+" ? 0.5 : -0.5);
+  v = Math.max(0, Math.min(60, Math.round(v * 10) / 10));
+  state.delay = v; $("delayVal").textContent = v.toFixed(1) + " s";
+  clearTimeout(delayTimer);
+  delayTimer = setTimeout(() => run(() => api("settings", {delay: v}), "Kutish: " + v.toFixed(1) + " s"), 500);
+}));
+
+/* tahrir usuli */
+document.querySelectorAll("#seg button").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.m === state.mode) return;
+  haptic("medium"); run(() => api("settings", {mode: b.dataset.m}), "Usul: " + b.textContent);
+}));
+
+/* sheet: kanal / matn / hisobot */
+let sheetMode = "add", editingId = null;
+function openSheet(mode, c){
+  sheetMode = mode; editingId = c ? c.id : null;
+  const T = {
+    add:    ["Kanal qo'shish", "Kanal @username va birinchi izoh matni", "Saqlash"],
+    edit:   ["Izoh matnini tahrirlash", c ? (c.title + " " + (c.username || "")) : "", "Saqlash"],
+    report: ["Hisobot kanali", "Siz egasi/admini bo'lgan kanal. Bo'sh qoldirsangiz — o'chiriladi", "Saqlash"]
+  }[mode];
+  $("shTitle").textContent = T[0]; $("shSub").textContent = T[1]; $("fSave").textContent = T[2];
+  $("fText").style.display = mode === "report" ? "none" : "block";
+  $("fNote").style.display = mode === "report" ? "none" : "block";
+  $("fUser").disabled = mode === "edit";
+  $("fUser").value = mode === "edit" ? (c.username || c.id) : mode === "report" ? (state.report ? (state.report.username || state.report.id) : "") : "";
+  $("fText").value = mode === "edit" ? c.text : "";
+  $("ov").classList.add("show"); $("sheet").classList.add("show");
+  setTimeout(() => (mode === "edit" ? $("fText") : $("fUser")).focus(), 300);
+}
+function closeSheet(){ $("ov").classList.remove("show"); $("sheet").classList.remove("show"); document.activeElement && document.activeElement.blur(); }
+$("fab").addEventListener("click", () => { haptic(); openSheet("add"); });
+$("repRow").addEventListener("click", () => { haptic(); openSheet("report"); });
+$("ov").addEventListener("click", closeSheet);
+$("fSave").addEventListener("click", async () => {
+  const u = $("fUser").value.trim(), t = $("fText").value.trim();
+  if (sheetMode !== "report" && (!u || !t)) return toast("Kanal va matnni kiriting", true);
+  $("fSave").disabled = true; $("fSave").innerHTML = '<span class="spin"></span>';
+  const good = sheetMode === "report"
+    ? await run(() => api("report", {target: u}), u ? "Hisobot kanali saqlandi ✅" : "Hisobot o'chirildi")
+    : await run(() => api("channel/add", {username: u, text: t}), sheetMode === "edit" ? "Saqlandi ✅" : "Kanal qo'shildi ✅");
+  $("fSave").disabled = false; $("fSave").textContent = "Saqlash";
+  if (good) closeSheet();
+});
+
+/* ro'yxatdagi tugmalar */
+$("list").addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const id = el.dataset.id, c = state.channels.find(x => x.id === id);
+  const act = el.dataset.act; haptic();
+  if (act === "edit") openSheet("edit", c);
+  else if (act === "exp"){ openEdits.has(id) ? openEdits.delete(id) : openEdits.add(id); render(state); }
+  else if (act === "del"){
+    const go = () => run(() => api("channel/del", {id}), "O'chirildi");
+    const q = `${c.title || c.username} o'chirilsinmi?`;
+    tg && tg.showConfirm ? tg.showConfirm(q, ok => ok && go()) : (confirm(q) && go());
+  }
+  else if (act === "adde"){
+    const inp = $("ne_" + id), t = inp.value.trim();
+    if (!t) return toast("Matn kiriting", true);
+    run(() => api("edit/add", {id, text: t}), "Tahrir matni qo'shildi ✅");
+  }
+  else if (act === "dele") run(() => api("edit/del", {id, index: +el.dataset.i}), "O'chirildi");
+});
+$("list").addEventListener("keydown", e => {
+  if (e.key === "Enter" && e.target.id && e.target.id.startsWith("ne_")){
+    const id = e.target.id.slice(3); const b = document.querySelector(`[data-act="adde"][data-id="${id}"]`); b && b.click();
+  }
+});
+
+if (!tg || !tg.initData) showLock("Bu sahifa faqat Telegram ichida ishlaydi.");
+else { load(); setInterval(() => { if (!busy && !document.hidden && !$("sheet").classList.contains("show") && !document.activeElement.matches("input,textarea")) load(); }, 10000); }
+</script>
+</body>
+</html>

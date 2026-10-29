@@ -1,0 +1,4 @@
+telethon>=1.36
+cryptg
+aiohttp
+uvloop
